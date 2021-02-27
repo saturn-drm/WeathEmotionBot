@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <link href="index.css" rel="stylesheet">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>WeathEmotionBot</title>
+    <meta name="description" content="Assignment 3, GSD SCI6365, Enactive Design">
+    <meta name="author" content="Zihan Zephaniah MEI">
+
+    <link rel="apple-touch-icon" sizes="180x180" href="favicon_io/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon_io/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon_io/favicon-16x16.png">
+    <link rel="manifest" href="favicon_io/site.webmanifest">
+
+    <link href="https://fonts.googleapis.com/css?family=Montserrat:200,400,600&display=swap" rel="stylesheet">
+
+    <script src="lib/jquery-1.11.0.min.js"></script>
+    <script src="lib/waterpipe.js"></script>
+</head>
+
+<body>
+    <div id="wavybg-wrapper" style="width: 100%; height: 100%;">
+        <canvas>Your browser does not support HTML5 canvas.</canvas>
+        <div class="container">
+            <h1>WeathEmotionBot</h1>
+            <h2>Ask the bot, get an image of weather back.</h2>
+            <blockquote>SCI-6365 ENACTIVE DESIGN</blockquote>
+            <blockquote>Zihan Mei, Jack Cheng</blockquote>
+            <blockquote>Instructor: Jose Luis García del Castillo y López</blockquote>
+            <hr>
+            <h3 class="browsererror">Sorry, but your browser doesn't support WebSpeech API. Try this page on Chrome.
+            </h3>
+            <div class="app">
+                <h3>Ask the bot like "What's the weather in {cityname}"</h3>
+                <p>Feel free to edit the result further manually.</p>
+                <div class="mainwords">
+                    <textarea id="text-converted" placeholder="say something and edit as you like" rows="4"
+                        spellcheck="false"></textarea>
+                </div>
+            </div>
+            <div class="horizontalcontainer">
+                <button id="start-rec">Start</button>
+                <button id="pause-rec">Pause</button>
+                <button id="clear-rec">Clear</button>
+            </div>
+            <button id="search-rec">Generate</button>
+            <p class="instructions">Press <strong>Start</strong> to start talking.</p>
+            <hr>
+            <h3>Explore some extreme emotions from the bot.</h3>
+            <div class="extreme high">
+                <button id="speed-high">high wind speed</button>
+                <button id="humidity-high">high humidity</button>
+                <button id="temp-high">high temperature</button>
+            </div>
+            <div class="extreme low">
+                <button id="speed-low">low wind speed</button>
+                <button id="humidity-low">low humidity</button>
+                <button id="temp-low">low temperature</button>
+            </div>
+            <hr>
+            <h3><a href="about.html" target="_blank">About</a></h3>
+        </div>
+    </div>
+
+    <script>
+        // read local city name set
+        var citystr;
+        var cityset = 'citysimplified.txt';
+        fetch(cityset)
+            .then(response => response.text())
+            .then(text => citystr = text);
+
+        // voice
+        try {
+            var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            var recognition = new SpeechRecognition();
+        }
+        catch (e) {
+            console.error(e);
+            $('.browsererror').show();
+            $('.app').hide();
+        }
+
+        var convertedtext = $('#text-converted');
+        var instructions = $('.instructions');
+        var textContent = '';
+        var cityAPI;
+
+        recognition.continuous = true;
+        recognition.onresult = function (event) {
+            var current = event.resultIndex;
+            var transcript = event.results[current][0].transcript;
+            var mobileRepeatBug = (current == 1 && transcript == event.results[0][0].transcript);
+            if (!mobileRepeatBug) {
+                textContent += transcript;
+                convertedtext.val(textContent);
+            }
+        }
+
+        recognition.onstart = function () {
+            instructions.text('Recording, please speak to microphone');
+        }
+
+        recognition.onspeechend = function () {
+            instructions.text('You were quiet for a while or paused recording, so voice recognition is off.');
+        }
+
+        recognition.onerror = function (event) {
+            if (event.error == 'no-speech') {
+                instructions.text('No speech was detected. Try again.');
+            };
+        }
+
+        $('#start-rec').click(function () {
+            if (textContent.length) {
+                textContent += ' ';
+            }
+            recognition.start();
+        })
+        $('#pause-rec').click(function () {
+            recognition.stop();
+            instructions.text('Stopped');
+        })
+        convertedtext.on('input', function () {
+            textContent = $(this).val();
+        })
+        $('#search-rec').click(function () {
+            recognition.stop();
+            cityAPI = findCity();
+            if (cityAPI != null) {
+                searchWeather(cityAPI);
+            }
+        })
+        $('#clear-rec').click(function () {
+            recognition.stop();
+            textContent = '';
+            convertedtext.val(textContent);
+        })
+
+        // search the city name in citystr by REGEX
+        var tofindcity = new RegExp("in ", "i");
+        function findCity() {
+            // find the city from the sentence - search word 'in'
+            var sentence = convertedtext.val();
+            if (sentence == '') {
+                alert('Please ask something');
+                return null;
+            }
+            var sepsentence = sentence.split(tofindcity);
+            var cityname = sepsentence[sepsentence.length - 1];
+            // look up the city from list
+            var cityRE = new RegExp(cityname, "i");
+            var cityfound = citystr.search(cityRE);
+            if (cityfound == -1) {
+                alert("No city found in the list, check the spelling and try again");
+                return null;
+            }
+            return cityname;
+        }
+
+        // api weather
+        // define the colorranges
+        var tempcolmin = 'fffbd5';
+        //var tempcolmid = 'FCFF42';
+        var tempcolmax = 'b20a2c';
+        var humcolmin = 'C6F3FF';
+        var humcolmax = '2F5DED';
+        const weatherapi = '5b732fbdd0c7d529d9b4da814301aa95';
+        const rooturl = 'http://api.openweathermap.org/data/2.5/weather?q=';
+        function searchWeather(cityAPI) {
+            var testurl = rooturl + cityAPI + '&appid=' + weatherapi + '&units=metric';
+            $.getJSON(testurl, function (res) {
+                // temp_max-bgouter, temp_min-bginner, humidity-gradientstart and end, speed-max and minrad
+                // speed 0-8(m/s), temp 0-10(C), humidity 0-100%
+                //console.log('maxtemp: ' + res.main.temp_max) - bgouter
+                //smokyBG.data('waterpipe').setOption('bgColorOuter', colorByPos(colorHexToInt(tempcolmid), colorHexToInt(tempcolmax), remappos(res.main.temp_max, -10, 35)));
+                smokyBG.data('waterpipe').setOption('bgColorOuter', tempcolmin);
+                //console.log('mintemp: ' + res.main.temp_min) - bginner
+                smokyBG.data('waterpipe').setOption('bgColorInner', colorByPos(colorHexToInt(tempcolmin), colorHexToInt(tempcolmax), remappos(res.main.temp_min, 0, 10)));
+                //console.log('humidity: ' + res.main.humidity) - gradientstart and end
+                smokyBG.data('waterpipe').setOption('gradientEnd', colorByPos(colorHexToInt(humcolmin), colorHexToInt(humcolmax), remappos(res.main.humidity, 0, 100)));
+                smokyBG.data('waterpipe').setOption('gradientStart', humcolmin);
+                //console.log('wind speed: ' + res.wind.speed) - speed
+                smokyBG.data('waterpipe').setOption('maxMaxRad', (remappos(res.wind.speed, 0, 8) * 2) * 250);
+                smokyBG.data('waterpipe').setOption('minMaxRad', (remappos(res.wind.speed, 0, 8) * 2) * 250);
+
+                smokyBG.data('waterpipe').generate();
+            })
+        }
+
+        // visualization
+        var smokyBG = $('#wavybg-wrapper').waterpipe({
+            //Default values
+            gradientStart: '#000000',
+            gradientEnd: '#7a7a7a',
+            smokeOpacity: 0.1,
+            numCircles: 2,
+            maxMaxRad: 250,
+            minMaxRad: 250,
+            minRadFactor: 0.2,
+            iterations: 8,
+            drawsPerFrame: 10,
+            lineWidth: 1,
+            speed: 1,
+            bgColorInner: "#ffffff",
+            bgColorOuter: "#cccccc"
+        });
+
+        // remap number to 0 - 1
+        function remappos(val, fromlow, fromhigh) {
+            if (val <= fromlow) {
+                return 0;
+            }
+            else if (val >= fromhigh) {
+                return 1;
+            }
+            else {
+                return (val - fromlow) / (fromhigh - fromlow);
+            }
+        }
+        // convert color hex to int, and remap to number 0-1, get the new color
+        function colorHexToInt(colorHex) {
+            if (colorHex.length != 6) { return 0; }
+            var R = colorHex.substring(0, 2);
+            var G = colorHex.substring(2, 4);
+            var B = colorHex.substring(4, 6);
+            return [parseInt(R, 16), parseInt(G, 16), parseInt(B, 16)];
+        }
+        function colorByPos(color1, color2, position) {
+            color2Multiplier = position;
+            color1Multiplier = 1 - position;
+            finalRGB = '';
+            for (i = 0; i < 3; i++) {
+                finalRGB += parseInt((color1[i] * color1Multiplier) + (color2[i] * color2Multiplier)).toString(16);
+            }
+            return finalRGB;
+        }
+
+        // some extreme exploration
+        $('#speed-high').click(function () {
+            smokyBG.data('waterpipe').setOption('maxMaxRad', 500);
+            smokyBG.data('waterpipe').setOption('minMaxRad', 500);
+            smokyBG.data('waterpipe').generate();
+        })
+        $('#speed-low').click(function () {
+            smokyBG.data('waterpipe').setOption('maxMaxRad', 50);
+            smokyBG.data('waterpipe').setOption('minMaxRad', 50);
+            smokyBG.data('waterpipe').generate();
+        })
+        $('#humidity-high').click(function () {
+            smokyBG.data('waterpipe').setOption('gradientEnd', humcolmax);
+            smokyBG.data('waterpipe').setOption('gradientStart', humcolmin);
+            smokyBG.data('waterpipe').generate();
+        })
+        $('#humidity-low').click(function () {
+            smokyBG.data('waterpipe').setOption('gradientEnd', colorByPos(colorHexToInt(humcolmin), colorHexToInt(humcolmax), remappos(20, 0, 100)));
+            smokyBG.data('waterpipe').setOption('gradientStart', humcolmin);
+            smokyBG.data('waterpipe').generate();
+        })
+        $('#temp-high').click(function () {
+            smokyBG.data('waterpipe').setOption('bgColorOuter', tempcolmin);
+            smokyBG.data('waterpipe').setOption('bgColorInner', tempcolmax);
+            smokyBG.data('waterpipe').generate();
+        })
+        $('#temp-low').click(function () {
+            smokyBG.data('waterpipe').setOption('bgColorOuter', tempcolmin);
+            smokyBG.data('waterpipe').setOption('bgColorInner', colorByPos(colorHexToInt(tempcolmin), colorHexToInt(tempcolmax), remappos(2, 0, 10)));
+            smokyBG.data('waterpipe').generate();
+        })
+    </script>
+
+</body>
+
+</html>

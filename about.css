@@ -6,6 +6,13 @@ body, html {
     background-color: #26547c;
 }
 
+.flex {
+    justify-content: center;
+    align-items: center;
+    display: flex;
+    height: 100%;
+}
+
 .container {
     width: 900px;
     margin: 0 auto;
@@ -21,4 +28,12 @@ a {
 
 a:hover {
     color: #ef476f;
+}
+
+.github path {
+    transition: all .3s;
+}
+
+.github:hover path{
+    fill: #ef476f;
 }

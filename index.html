@@ -62,7 +62,7 @@
                 <button id="temp-low">low temperature</button>
             </div>
             <hr>
-            <h3><a href="about.html" target="_blank">About</a></h3>
+            <h3><a href="about.html" target="_blank">About & Reference</a></h3>
         </div>
     </div>
 
@@ -170,7 +170,7 @@
         var humcolmin = 'C6F3FF';
         var humcolmax = '2F5DED';
         const weatherapi = '5b732fbdd0c7d529d9b4da814301aa95';
-        const rooturl = 'http://api.openweathermap.org/data/2.5/weather?q=';
+        const rooturl = 'https://api.openweathermap.org/data/2.5/weather?q=';
         function searchWeather(cityAPI) {
             var testurl = rooturl + cityAPI + '&appid=' + weatherapi + '&units=metric';
             $.getJSON(testurl, function (res) {

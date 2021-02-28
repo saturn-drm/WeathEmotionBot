@@ -235,7 +235,9 @@
             color1Multiplier = 1 - position;
             finalRGB = '';
             for (i = 0; i < 3; i++) {
-                finalRGB += parseInt((color1[i] * color1Multiplier) + (color2[i] * color2Multiplier)).toString(16);
+                var hexstr = parseInt((color1[i] * color1Multiplier) + (color2[i] * color2Multiplier)).toString(16);
+                if (hexstr.length == 1) { finalRGB += '0'; }
+                finalRGB += hexstr;
             }
             return finalRGB;
         }

@@ -60,11 +60,11 @@ button:hover {
     box-shadow: 1px 1px 4px 0px rgba(0, 0, 0, 0.05), 2px 4px 10px 0 rgba(0, 0, 0, 0.1), 0 0 10px 0 rgba(0, 0, 0, 0.2);
 }
 
-button#search-rec {
+button.highlightbutton {
     background-color: #ffb759;
 }
 
-button#search-rec:hover {
+button.highlightbutton:hover {
     background-color: #ef476f !important;
 }
 

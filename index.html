@@ -47,7 +47,8 @@
                 <button id="pause-rec">Pause</button>
                 <button id="clear-rec">Clear</button>
             </div>
-            <button id="search-rec">Generate</button>
+            <button id="search-rec" class="highlightbutton">Generate</button>
+            <button id="download" class="highlightbutton">Download</button>
             <p class="instructions">Press <strong>Start</strong> to start talking.</p>
             <hr>
             <h3>Explore some extreme emotions from the bot.</h3>
@@ -272,6 +273,11 @@
             smokyBG.data('waterpipe').setOption('bgColorOuter', tempcolmin);
             smokyBG.data('waterpipe').setOption('bgColorInner', colorByPos(colorHexToInt(tempcolmin), colorHexToInt(tempcolmax), remappos(2, 0, 10)));
             smokyBG.data('waterpipe').generate();
+        })
+
+        // download
+        $('#download').click(function () {
+            smokyBG.data('waterpipe').download(1920, 1980);
         })
     </script>
 
